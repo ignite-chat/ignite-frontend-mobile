@@ -16,7 +16,7 @@ export default function TabLayout() {
   const { token, user, isLoading } = useAuth();
 
   useEffect(() => {
-    console.log("Hello", token, user);
+    console.debug("[DEBUG]", token, user);
 
     if (token && user) {
       GuildsService.loadGuilds().then((res) => {
