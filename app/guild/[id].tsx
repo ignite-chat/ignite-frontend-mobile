@@ -1,29 +1,16 @@
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo } from 'react';
-import {
-  Pressable,
-  SectionList,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { SectionList, StyleSheet, View } from 'react-native';
 
+import { ChannelRow } from '@/components/guild/channel-row';
+import { GuildHeader } from '@/components/guild/guild-header';
 import { ThemedText } from '@/components/themed-text';
-import { Colors } from '@/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useGuildsStore } from '@/stores/guild-store';
+import { useGuildsStore, type Channel } from '@/stores/guild-store';
+import { Colors, TextStyles } from '@/theme';
 
 const CHANNEL_TYPE_TEXT = 0;
-const CHANNEL_TYPE_VOICE = 2;
 const CHANNEL_TYPE_CATEGORY = 3;
-
-type Channel = {
-  channel_id: string;
-  name: string;
-  type: number;
-  position: number;
-  parent_id: string | null;
-};
 
 type Section = {
   title: string | null;
@@ -35,8 +22,6 @@ function buildSections(channels: Channel[]): Section[] {
 
   const categories = sorted.filter((c) => c.type === CHANNEL_TYPE_CATEGORY);
   const nonCategories = sorted.filter((c) => c.type !== CHANNEL_TYPE_CATEGORY);
-
-  // Channels without a parent go into an "uncategorized" section at the top
   const uncategorized = nonCategories.filter((c) => !c.parent_id);
 
   const sections: Section[] = [];
@@ -53,38 +38,6 @@ function buildSections(channels: Channel[]): Section[] {
   return sections;
 }
 
-function ChannelIcon({ type, color }: { type: number; color: string }) {
-  if (type === CHANNEL_TYPE_VOICE) {
-    return <MaterialIcons name="volume-up" size={22} color={color} />;
-  }
-  return <MaterialIcons name="tag" size={22} color={color} />;
-}
-
-function ChannelRow({
-  channel,
-  colors,
-  onPress,
-}: {
-  channel: Channel;
-  colors: typeof Colors.light;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      style={({ pressed }) => [
-        styles.channelRow,
-        { backgroundColor: pressed ? colors.inputBackground : 'transparent' },
-      ]}
-      onPress={onPress}>
-      <ChannelIcon type={channel.type} color={colors.icon} />
-      <ThemedText style={styles.channelName} numberOfLines={1}>
-        {channel.name}
-      </ThemedText>
-      <MaterialIcons name="chevron-right" size={20} color={colors.placeholder} />
-    </Pressable>
-  );
-}
-
 export default function GuildChannelsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -94,40 +47,30 @@ export default function GuildChannelsScreen() {
   const guild = useGuildsStore((s) => s.guilds.find((g) => g.id === id));
 
   const sections = useMemo(
-    () => buildSections((guild?.channels ?? []) as Channel[]),
+    () => buildSections(guild?.channels ?? []),
     [guild?.channels],
   );
 
   if (!guild) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <ThemedText style={{ color: colors.placeholder }}>Guild not found</ThemedText>
+        <ThemedText style={{ color: colors.textMuted }}>Guild not found</ThemedText>
       </View>
     );
   }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header */}
-      <View style={[styles.header, { borderBottomColor: colors.inputBorder }]}>
-        <Pressable onPress={() => router.back()} hitSlop={8}>
-          <MaterialIcons name="arrow-back" size={24} color={colors.text} />
-        </Pressable>
-        <ThemedText style={styles.headerTitle} numberOfLines={1}>
-          {guild.name}
-        </ThemedText>
-        <View style={{ width: 24 }} />
-      </View>
+      <GuildHeader name={guild.name} colors={colors} onBack={() => router.back()} />
 
-      {/* Channel list */}
       <SectionList
         sections={sections}
         keyExtractor={(item) => item.channel_id}
         renderSectionHeader={({ section }) =>
           section.title ? (
             <View style={[styles.sectionHeader, { backgroundColor: colors.background }]}>
-              <ThemedText style={[styles.sectionTitle, { color: colors.placeholder }]}>
-                {section.title.toUpperCase()}
+              <ThemedText style={[TextStyles.label, { color: colors.textMuted }]}>
+                {section.title}
               </ThemedText>
             </View>
           ) : null
@@ -138,7 +81,10 @@ export default function GuildChannelsScreen() {
             colors={colors}
             onPress={() => {
               if (item.type === CHANNEL_TYPE_TEXT) {
-                router.push({ pathname: '/channel/[id]' as any, params: { id: item.channel_id, name: item.name, guildId: id } });
+                router.push({
+                  pathname: '/channel/[id]' as any,
+                  params: { id: item.channel_id, name: item.name, guildId: id },
+                });
               }
             }}
           />
@@ -146,7 +92,7 @@ export default function GuildChannelsScreen() {
         stickySectionHeadersEnabled
         ListEmptyComponent={
           <View style={styles.center}>
-            <ThemedText style={{ color: colors.placeholder }}>No channels</ThemedText>
+            <ThemedText style={{ color: colors.textMuted }}>No channels</ThemedText>
           </View>
         }
       />
@@ -164,40 +110,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 32,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 54,
-    paddingBottom: 12,
-    paddingHorizontal: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  headerTitle: {
-    flex: 1,
-    fontSize: 18,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginHorizontal: 12,
-  },
   sectionHeader: {
-    paddingHorizontal: 16,
-    paddingTop: 20,
-    paddingBottom: 6,
-  },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  channelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 13,
-    gap: 12,
-  },
-  channelName: {
-    flex: 1,
-    fontSize: 16,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 8,
   },
 });

@@ -1,5 +1,16 @@
 import { create } from 'zustand';
 
+export type Channel = {
+  channel_id: string;
+  guild_id: string;
+  name: string;
+  type: number;
+  position: number;
+  parent_id: string | null;
+  last_message_id: string | null;
+  created_at: string;
+};
+
 export type Guild = {
   id: string;
   name: string;
@@ -9,7 +20,7 @@ export type Guild = {
   banner_file_id: string | null;
   member_count: number;
   created_at: string;
-  channels: any[];
+  channels: Channel[];
   roles: any[];
 };
 
@@ -34,8 +45,8 @@ type GuildsStore = {
   editGuildMember: (guildId: string, userId: string, updates: Partial<GuildMember>) => void;
   removeGuildMember: (guildId: string, userId: string) => void;
 
-  addGuildChannel: (guildId: string, channel: any) => void;
-  editGuildChannel: (guildId: string, channelId: string, updates: Partial<any>) => void;
+  addGuildChannel: (guildId: string, channel: Channel) => void;
+  editGuildChannel: (guildId: string, channelId: string, updates: Partial<Channel>) => void;
   removeGuildChannel: (guildId: string, channelId: string) => void;
 };
 
@@ -96,7 +107,7 @@ export const useGuildsStore = create<GuildsStore>((set) => ({
         if (g.id === guildId) {
           return {
             ...g,
-            channels: g.channels.map((c: any) =>
+            channels: g.channels.map((c) =>
               c.channel_id === channelId ? { ...c, ...updates } : c
             ),
           };
@@ -108,7 +119,7 @@ export const useGuildsStore = create<GuildsStore>((set) => ({
     set((state) => ({
       guilds: state.guilds.map((g) =>
         g.id === guildId
-          ? { ...g, channels: g.channels.filter((c: any) => c.channel_id !== channelId) }
+          ? { ...g, channels: g.channels.filter((c) => c.channel_id !== channelId) }
           : g
       ),
     })),

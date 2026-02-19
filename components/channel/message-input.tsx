@@ -1,7 +1,7 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
-import { Colors } from '@/theme';
+import { Colors, TextStyles } from '@/theme';
 
 type MessageInputProps = {
   text: string;
@@ -15,14 +15,14 @@ export function MessageInput({ text, onChangeText, onSend, sending, colors }: Me
   const hasContent = !!text.trim();
 
   return (
-    <View style={[styles.inputBar, { borderTopColor: colors.inputBorder, backgroundColor: colors.background }]}>
+    <View style={[styles.inputBar, { backgroundColor: colors.background }]}>
       <TextInput
         style={[
           styles.input,
+          TextStyles.body,
           {
-            backgroundColor: colors.inputBackground,
+            backgroundColor: colors.surfaceOverlay,
             color: colors.text,
-            borderColor: colors.inputBorder,
           },
         ]}
         placeholder="Message..."
@@ -37,7 +37,7 @@ export function MessageInput({ text, onChangeText, onSend, sending, colors }: Me
         disabled={!hasContent || sending}
         style={({ pressed }) => [
           styles.sendButton,
-          { backgroundColor: hasContent ? colors.tint : colors.inputBackground, opacity: pressed ? 0.7 : 1 },
+          { backgroundColor: hasContent ? colors.tint : colors.surfaceOverlay, opacity: pressed ? 0.7 : 1 },
         ]}>
         <MaterialIcons name="send" size={20} color={hasContent ? '#fff' : colors.placeholder} />
       </Pressable>
@@ -50,24 +50,32 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 10,
     gap: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -1 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
   input: {
     flex: 1,
     minHeight: 40,
     maxHeight: 120,
-    borderRadius: 20,
-    paddingHorizontal: 16,
+    borderRadius: 22,
+    paddingHorizontal: 18,
     paddingVertical: 10,
-    fontSize: 15,
-    borderWidth: StyleSheet.hairlineWidth,
   },
   sendButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     justifyContent: 'center',
     alignItems: 'center',
   },

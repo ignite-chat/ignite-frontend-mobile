@@ -1,5 +1,6 @@
 import { Redirect, Tabs } from 'expo-router';
 import React, { useEffect } from 'react';
+import { Platform, StyleSheet } from 'react-native';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -7,15 +8,16 @@ import { useAuth } from '@/contexts/auth-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { EchoService } from '@/services/echo';
 import { GuildsService } from '@/services/guilds';
-import { Colors } from '@/theme';
+import { Colors, TextStyles } from '@/theme';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
   const { token, user, isLoading } = useAuth();
 
   useEffect(() => {
     console.log("Hello", token, user);
-    
+
     if (token && user) {
       GuildsService.loadGuilds().then((res) => {
         if (res?.ok) {
@@ -39,7 +41,19 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: colors.tint,
+        tabBarInactiveTintColor: colors.tabIconDefault,
+        tabBarStyle: {
+          backgroundColor: colors.surfaceRaised,
+          borderTopColor: colors.separator,
+          borderTopWidth: StyleSheet.hairlineWidth,
+          paddingTop: 6,
+          paddingBottom: Platform.OS === 'ios' ? 24 : 10,
+          height: Platform.OS === 'ios' ? 84 : 62,
+        },
+        tabBarLabelStyle: {
+          ...TextStyles.tabLabel,
+        },
         headerShown: false,
         tabBarButton: HapticTab,
       }}>
@@ -51,10 +65,10 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="you"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: 'You',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.fill" color={color} />,
         }}
       />
     </Tabs>

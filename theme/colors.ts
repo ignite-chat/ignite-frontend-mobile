@@ -1,36 +1,47 @@
 /**
- * App color palette. Edit these values to change the look of the entire app.
+ * App color palette — 3-tier depth system for polished surfaces.
  *
- * HSL references (for easy tweaking):
- *   dark.background  = hsl(220, 7%, 8%)  → #131416
- *   dark.tint/primary = hsl(11, 87%, 60%) → #f26140
+ * Surface hierarchy (dark):
+ *   background  → deepest layer (page)
+ *   surfaceRaised → cards, tab bar, modals
+ *   surfaceOverlay → inputs, search bars
  */
 
 export const Colors = {
   light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: '#f26140',
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: '#f26140',
-    inputBackground: '#f0f2f5',
-    inputBorder: '#d0d5dd',
-    placeholder: '#9ca3af',
-    error: '#ef4444',
-    cardBackground: '#f8f9fa',
+    text: '#0E1116',
+    textSecondary: '#656D76',
+    textMuted: '#8B949E',
+    background: '#FFFFFF',
+    surfaceRaised: '#F5F6F8',
+    surfaceOverlay: '#EBEDF0',
+    tint: '#D94F35',
+    icon: '#656D76',
+    tabIconDefault: '#8B949E',
+    tabIconSelected: '#D94F35',
+    inputBackground: '#F5F6F8',
+    inputBorder: '#D1D5DB',
+    placeholder: '#8B949E',
+    error: '#E5342D',
+    cardBackground: '#F5F6F8',
+    separator: '#D1D5DB',
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#131416',
-    tint: '#f26140',
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: '#f26140',
-    inputBackground: '#1c1d20',
-    inputBorder: '#2a2c2f',
-    placeholder: '#6b7280',
-    error: '#ef4444',
-    cardBackground: '#1c1d20',
+    text: '#E8EAED',
+    textSecondary: '#8B929A',
+    textMuted: '#5C6370',
+    background: '#0f1114',
+    surfaceRaised: '#1a1d21',
+    surfaceOverlay: '#22262b',
+    tint: '#E8583E',
+    icon: '#7C8590',
+    tabIconDefault: '#5C6370',
+    tabIconSelected: '#E8583E',
+    inputBackground: '#1a1d21',
+    inputBorder: '#2e3238',
+    placeholder: '#5C6370',
+    error: '#F04438',
+    cardBackground: '#1a1d21',
+    separator: '#2e3238',
   },
 };

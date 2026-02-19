@@ -1,8 +1,9 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
-import { Colors } from '@/theme';
+import { Colors, TextStyles } from '@/theme';
 
 type ChannelHeaderProps = {
   channelName: string;
@@ -13,17 +14,19 @@ type ChannelHeaderProps = {
 };
 
 export function ChannelHeader({ channelName, colors, onBack, onNamePress, onSearchPress }: ChannelHeaderProps) {
+  const insets = useSafeAreaInsets();
+
   return (
-    <View style={[styles.header, { borderBottomColor: colors.inputBorder }]}>
-      <Pressable onPress={onBack} hitSlop={8}>
+    <View style={[styles.header, { paddingTop: insets.top + 10, borderBottomColor: colors.separator }]}>
+      <Pressable onPress={onBack} hitSlop={8} style={styles.backButton}>
         <MaterialIcons name="arrow-back" size={24} color={colors.text} />
       </Pressable>
       <Pressable style={styles.headerCenter} onPress={onNamePress}>
-        <MaterialIcons name="tag" size={20} color={colors.icon} />
-        <ThemedText style={styles.headerTitle} numberOfLines={1}>
+        <MaterialIcons name="tag" size={20} color={colors.textSecondary} />
+        <ThemedText style={[TextStyles.heading, styles.headerTitle]} numberOfLines={1}>
           {channelName}
         </ThemedText>
-        <MaterialIcons name="keyboard-arrow-down" size={20} color={colors.icon} />
+        <MaterialIcons name="keyboard-arrow-down" size={16} color={colors.textMuted} />
       </Pressable>
       <Pressable onPress={onSearchPress} hitSlop={8} style={styles.searchButton}>
         <MaterialIcons name="search" size={24} color={colors.text} />
@@ -36,10 +39,12 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 54,
-    paddingBottom: 12,
+    paddingBottom: 14,
     paddingHorizontal: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  backButton: {
+    padding: 4,
   },
   headerCenter: {
     flexDirection: 'row',
@@ -49,11 +54,10 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
     flexShrink: 1,
   },
   searchButton: {
     marginLeft: 'auto',
+    padding: 4,
   },
 });

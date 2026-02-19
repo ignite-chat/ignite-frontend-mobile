@@ -1,94 +1,73 @@
-import { Image } from 'expo-image';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useMemo, useState } from 'react';
 import {
   FlatList,
   Pressable,
   StyleSheet,
+  TextInput,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { GuildItem, getLatestActivityTimestamp } from '@/components/guild/guild-item';
 import { ThemedText } from '@/components/themed-text';
-import { Colors } from '@/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useGuildsStore, type Guild } from '@/stores/guild-store';
-
-const CDN_BASE = 'https://cdn.ignite-chat.com';
-
-function getInitials(name: string): string {
-  return name
-    .split(/\s+/)
-    .map((word) => word[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
-}
-
-function GuildItem({
-  guild,
-  colors,
-  onPress,
-}: {
-  guild: Guild;
-  colors: typeof Colors.light;
-  onPress: () => void;
-}) {
-  const iconUrl = guild.icon_file_id
-    ? `${CDN_BASE}/icons/${guild.icon_file_id}`
-    : null;
-
-  return (
-    <Pressable
-      style={({ pressed }) => [
-        styles.guildItem,
-        { backgroundColor: pressed ? colors.inputBackground : 'transparent' },
-      ]}
-      onPress={onPress}>
-      {iconUrl ? (
-        <Image source={{ uri: iconUrl }} style={styles.guildIcon} />
-      ) : (
-        <View style={[styles.guildIconPlaceholder, { backgroundColor: colors.tint }]}>
-          <ThemedText style={styles.guildInitials}>
-            {getInitials(guild.name)}
-          </ThemedText>
-        </View>
-      )}
-      <View style={styles.guildInfo}>
-        <ThemedText style={styles.guildName} numberOfLines={1}>
-          {guild.name}
-        </ThemedText>
-        <ThemedText style={[styles.guildMeta, { color: colors.placeholder }]} numberOfLines={1}>
-          {guild.member_count} {guild.member_count === 1 ? 'member' : 'members'}
-        </ThemedText>
-      </View>
-    </Pressable>
-  );
-}
+import { useGuildsStore } from '@/stores/guild-store';
+import { Colors, TextStyles } from '@/theme';
 
 export default function HomeScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  const guilds = useGuildsStore((s) => s.guilds);
+  const [search, setSearch] = useState('');
+  const rawGuilds = useGuildsStore((s) => s.guilds);
+  const guilds = useMemo(() => {
+    const sorted = [...rawGuilds].sort((a, b) => getLatestActivityTimestamp(b) - getLatestActivityTimestamp(a));
+    const query = search.trim().toLowerCase();
+    return query ? sorted.filter((g) => g.name.toLowerCase().includes(query)) : sorted;
+  }, [rawGuilds, search]);
 
   if (guilds.length === 0) {
     return (
-      <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <ThemedText style={{ color: colors.placeholder }}>
+      <SafeAreaView style={[styles.center, { backgroundColor: colors.background }]}>
+        <ThemedText style={{ color: colors.textMuted }}>
           No guilds yet
         </ThemedText>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       <FlatList
         data={guilds}
         keyExtractor={(item) => item.id}
+        ListHeaderComponent={
+          <View style={[styles.searchContainer, { backgroundColor: colors.background }]}>
+            <View style={[styles.searchBar, { backgroundColor: colors.surfaceOverlay }]}>
+              <Ionicons name="search" size={16} color={colors.textMuted} />
+              <TextInput
+                style={[styles.searchInput, TextStyles.body, { color: colors.text }]}
+                placeholder="Search"
+                placeholderTextColor={colors.placeholder}
+                value={search}
+                onChangeText={setSearch}
+                autoCorrect={false}
+                autoCapitalize="none"
+                returnKeyType="search"
+              />
+              {search.length > 0 && (
+                <Pressable onPress={() => setSearch('')} hitSlop={8}>
+                  <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+                </Pressable>
+              )}
+            </View>
+          </View>
+        }
         renderItem={({ item }) => (
           <GuildItem
             guild={item}
-            colors={colors}
             onPress={() => router.push(`/guild/${item.id}` as any)}
           />
         )}
@@ -96,12 +75,12 @@ export default function HomeScreen() {
           <View
             style={[
               styles.separator,
-              { backgroundColor: colors.inputBorder },
+              { backgroundColor: colors.separator },
             ]}
           />
         )}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -114,44 +93,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  guildItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  guildIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-  },
-  guildIconPlaceholder: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  guildInitials: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  guildInfo: {
-    flex: 1,
-    marginLeft: 14,
-    justifyContent: 'center',
-  },
-  guildName: {
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  guildMeta: {
-    fontSize: 14,
-    marginTop: 2,
-  },
   separator: {
     height: StyleSheet.hairlineWidth,
-    marginLeft: 82,
+    marginLeft: 78,
+  },
+  searchContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    height: 40,
+    gap: 8,
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: 0,
   },
 });

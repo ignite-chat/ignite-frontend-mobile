@@ -1,11 +1,11 @@
-import { Image } from 'expo-image';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Colors } from '@/theme';
 import { GuildsService } from '@/services/guilds';
 import { useGuildsStore } from '@/stores/guild-store';
+import { Colors, TextStyles } from '@/theme';
+import { Image } from 'expo-image';
 
 type ChannelInfoModalProps = {
   visible: boolean;
@@ -23,6 +23,7 @@ export function ChannelInfoModal({ visible, channelName, guildId, colors, onClos
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    console.log(visible, guildId, members);
     if (!visible || !guildId || members.length > 0) return;
     setLoading(true);
     GuildsService.loadGuildMembers(guildId).finally(() => setLoading(false));
@@ -31,22 +32,22 @@ export function ChannelInfoModal({ visible, channelName, guildId, colors, onClos
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <Pressable style={styles.overlay} onPress={onClose}>
-        <Pressable style={[styles.content, { backgroundColor: colors.background }]} onPress={() => {}}>
-          <View style={[styles.handle, { backgroundColor: colors.placeholder }]} />
-          <ThemedText style={styles.title}>{channelName}</ThemedText>
+        <Pressable style={[styles.content, { backgroundColor: colors.surfaceRaised }]} onPress={() => { }}>
+          <View style={[styles.handle, { backgroundColor: colors.separator }]} />
+          <ThemedText style={[TextStyles.title, styles.title]}>{channelName}</ThemedText>
 
-          <View style={[styles.tabBar, { borderBottomColor: colors.inputBorder }]}>
+          <View style={[styles.tabBar, { borderBottomColor: colors.separator }]}>
             <Pressable
               style={[styles.tab, activeTab === 'members' && { borderBottomColor: colors.tint }]}
               onPress={() => setActiveTab('members')}>
-              <ThemedText style={[styles.tabText, activeTab === 'members' && { color: colors.tint }]}>
+              <ThemedText style={[TextStyles.heading, activeTab === 'members' && { color: colors.tint }]}>
                 Member List
               </ThemedText>
             </Pressable>
             <Pressable
               style={[styles.tab, activeTab === 'media' && { borderBottomColor: colors.tint }]}
               onPress={() => setActiveTab('media')}>
-              <ThemedText style={[styles.tabText, activeTab === 'media' && { color: colors.tint }]}>
+              <ThemedText style={[TextStyles.heading, activeTab === 'media' && { color: colors.tint }]}>
                 Media
               </ThemedText>
             </Pressable>
@@ -89,8 +90,8 @@ export function ChannelInfoModal({ visible, channelName, guildId, colors, onClos
               />
             )
           ) : (
-            <View style={styles.centered}>
-              <ThemedText style={{ color: colors.placeholder }}>No media to show</ThemedText>
+            <View style={styles.tabContent}>
+              <ThemedText style={{ color: colors.textMuted }}>No media to show</ThemedText>
             </View>
           )}
         </Pressable>
@@ -102,26 +103,24 @@ export function ChannelInfoModal({ visible, channelName, guildId, colors, onClos
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'flex-end',
   },
   content: {
     height: '60%',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     paddingHorizontal: 16,
     paddingTop: 12,
   },
   handle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
+    width: 40,
+    height: 5,
+    borderRadius: 2.5,
     alignSelf: 'center',
     marginBottom: 12,
   },
   title: {
-    fontSize: 20,
-    fontWeight: '700',
     marginBottom: 16,
   },
   tabBar: {
@@ -131,12 +130,14 @@ const styles = StyleSheet.create({
   tab: {
     paddingVertical: 10,
     paddingHorizontal: 16,
-    borderBottomWidth: 2,
+    borderBottomWidth: 2.5,
     borderBottomColor: 'transparent',
   },
-  tabText: {
-    fontSize: 15,
-    fontWeight: '600',
+  tabContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 32,
   },
   centered: {
     flex: 1,

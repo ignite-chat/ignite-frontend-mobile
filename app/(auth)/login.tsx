@@ -15,8 +15,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
 import { useAuth } from '@/contexts/auth-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useThemeColor } from '@/hooks/use-theme-color';
 import { login } from '@/services/auth';
+import { Colors, TextStyles } from '@/theme';
 
 const HCAPTCHA_SITE_KEY = '78b0437e-9a22-4e50-aae6-26ae467445d8';
 const HCAPTCHA_BASE_URL = 'https://hcaptcha.com';
@@ -24,9 +24,7 @@ const HCAPTCHA_BASE_URL = 'https://hcaptcha.com';
 export default function LoginScreen() {
   const { signIn } = useAuth();
   const colorScheme = useColorScheme() ?? 'light';
-  const backgroundColor = useThemeColor({}, 'background');
-  const textColor = useThemeColor({}, 'text');
-  const tintColor = useThemeColor({}, 'tint');
+  const colors = Colors[colorScheme];
 
   const captchaRef = useRef<ConfirmHcaptcha>(null);
 
@@ -34,10 +32,6 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const inputBg = colorScheme === 'dark' ? '#1e2022' : '#f0f2f5';
-  const inputBorder = colorScheme === 'dark' ? '#2e3234' : '#d0d5dd';
-  const placeholderColor = colorScheme === 'dark' ? '#6b7280' : '#9ca3af';
 
   function handlePress() {
     if (!username.trim()) {
@@ -68,7 +62,6 @@ export default function LoginScreen() {
       return;
     }
 
-    // data is the hCaptcha token
     setLoading(true);
     const result = await login(username.trim(), password, data);
 
@@ -81,34 +74,37 @@ export default function LoginScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.inner}
       >
         <View style={styles.header}>
-          <ThemedText type="title" style={styles.title}>
+          <ThemedText type="display" style={styles.title}>
             Ignite
           </ThemedText>
-          <ThemedText style={styles.subtitle}>
+          <ThemedText style={[TextStyles.body, { color: colors.textSecondary }]}>
             Welcome back! Sign in to continue.
           </ThemedText>
         </View>
 
         <View style={styles.form}>
           <View style={styles.field}>
-            <ThemedText style={styles.label}>Username</ThemedText>
+            <ThemedText style={[TextStyles.label, { color: colors.textSecondary }]}>
+              Username
+            </ThemedText>
             <TextInput
               style={[
                 styles.input,
+                TextStyles.body,
                 {
-                  backgroundColor: inputBg,
-                  borderColor: inputBorder,
-                  color: textColor,
+                  backgroundColor: colors.surfaceRaised,
+                  borderColor: colors.inputBorder,
+                  color: colors.text,
                 },
               ]}
               placeholder="Enter your username"
-              placeholderTextColor={placeholderColor}
+              placeholderTextColor={colors.placeholder}
               autoCapitalize="none"
               autoCorrect={false}
               value={username}
@@ -118,18 +114,21 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.field}>
-            <ThemedText style={styles.label}>Password</ThemedText>
+            <ThemedText style={[TextStyles.label, { color: colors.textSecondary }]}>
+              Password
+            </ThemedText>
             <TextInput
               style={[
                 styles.input,
+                TextStyles.body,
                 {
-                  backgroundColor: inputBg,
-                  borderColor: inputBorder,
-                  color: textColor,
+                  backgroundColor: colors.surfaceRaised,
+                  borderColor: colors.inputBorder,
+                  color: colors.text,
                 },
               ]}
               placeholder="Enter your password"
-              placeholderTextColor={placeholderColor}
+              placeholderTextColor={colors.placeholder}
               secureTextEntry
               value={password}
               onChangeText={setPassword}
@@ -139,11 +138,13 @@ export default function LoginScreen() {
           </View>
 
           {error ? (
-            <ThemedText style={styles.error}>{error}</ThemedText>
+            <ThemedText style={[TextStyles.bodySmall, { color: colors.error }]}>
+              {error}
+            </ThemedText>
           ) : null}
 
           <TouchableOpacity
-            style={[styles.button, { backgroundColor: tintColor }]}
+            style={[styles.button, { backgroundColor: colors.tint }]}
             onPress={handlePress}
             disabled={loading}
             activeOpacity={0.8}
@@ -151,12 +152,7 @@ export default function LoginScreen() {
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <ThemedText
-                style={[
-                  styles.buttonText,
-                  { color: colorScheme === 'dark' ? '#000' : '#fff' },
-                ]}
-              >
+              <ThemedText style={[TextStyles.button, { color: '#fff' }]}>
                 Sign In
               </ThemedText>
             )}
@@ -164,12 +160,12 @@ export default function LoginScreen() {
         </View>
 
         <View style={styles.footer}>
-          <ThemedText style={styles.footerText}>
+          <ThemedText style={[TextStyles.bodySmall, { color: colors.textSecondary }]}>
             Don't have an account?{' '}
           </ThemedText>
           <Link href="/(auth)/register" asChild>
             <TouchableOpacity>
-              <ThemedText style={[styles.footerLink, { color: tintColor }]}>
+              <ThemedText style={[TextStyles.bodySmall, { color: colors.tint, fontWeight: '600' }]}>
                 Sign Up
               </ThemedText>
             </TouchableOpacity>
@@ -199,59 +195,33 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   header: {
-    marginBottom: 32,
+    marginBottom: 36,
   },
   title: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    opacity: 0.7,
+    marginBottom: 10,
   },
   form: {
     gap: 16,
   },
   field: {
-    gap: 6,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
+    gap: 8,
   },
   input: {
-    height: 48,
-    borderRadius: 10,
+    height: 50,
+    borderRadius: 12,
     borderWidth: 1,
-    paddingHorizontal: 14,
-    fontSize: 16,
-  },
-  error: {
-    color: '#ef4444',
-    fontSize: 14,
+    paddingHorizontal: 16,
   },
   button: {
-    height: 48,
-    borderRadius: 10,
+    height: 52,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 4,
-  },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: '600',
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
     marginTop: 24,
-  },
-  footerText: {
-    fontSize: 14,
-  },
-  footerLink: {
-    fontSize: 14,
-    fontWeight: '600',
   },
 });

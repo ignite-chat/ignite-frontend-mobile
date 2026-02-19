@@ -14,11 +14,11 @@ import { ChannelInfoModal } from '@/components/channel/channel-info-modal';
 import { MessageInput } from '@/components/channel/message-input';
 import { MessageItem, type DisplayMessage } from '@/components/channel/message-item';
 import { ThemedText } from '@/components/themed-text';
-import { Colors } from '@/theme';
 import { useAuth } from '@/contexts/auth-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { MessagesService } from '@/services/messages';
 import { useMessagesStore, type Message, type PendingMessage } from '@/stores/messages-store';
+import { Colors } from '@/theme';
 
 const EMPTY_MESSAGES: Message[] = [];
 const EMPTY_PENDING: PendingMessage[] = [];
@@ -120,7 +120,7 @@ export default function ChannelScreen() {
             ListFooterComponent={null}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
-                <ThemedText style={{ color: colors.placeholder }}>No messages yet</ThemedText>
+                <ThemedText style={{ color: colors.textMuted }}>No messages yet</ThemedText>
               </View>
             }
           />
@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   listContent: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     paddingVertical: 8,
   },
   emptyContainer: {
