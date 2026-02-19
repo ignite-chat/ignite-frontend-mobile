@@ -1,13 +1,28 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
+import { Redirect, Tabs } from 'expo-router';
+import React, { useEffect } from 'react';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
+import { Colors } from '@/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useAuth } from '@/contexts/auth-context';
+import { GuildsService } from '@/services/guilds';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const { token, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (token) {
+      GuildsService.loadGuilds(token);
+    }
+  }, [token]);
+
+  if (isLoading) return null;
+
+  if (!token) {
+    return <Redirect href="/(auth)/login" />;
+  }
 
   return (
     <Tabs

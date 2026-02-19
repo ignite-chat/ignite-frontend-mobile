@@ -1,98 +1,157 @@
 import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
+import {
+  FlatList,
+  Pressable,
+  StyleSheet,
+  View,
+} from 'react-native';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { Colors } from '@/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useGuildsStore, type Guild } from '@/stores/guild-store';
+
+const CDN_BASE = 'https://cdn.ignite-chat.com';
+
+function getInitials(name: string): string {
+  return name
+    .split(/\s+/)
+    .map((word) => word[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+}
+
+function GuildItem({
+  guild,
+  colors,
+  onPress,
+}: {
+  guild: Guild;
+  colors: typeof Colors.light;
+  onPress: () => void;
+}) {
+  const iconUrl = guild.icon_file_id
+    ? `${CDN_BASE}/icons/${guild.icon_file_id}`
+    : null;
+
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.guildItem,
+        { backgroundColor: pressed ? colors.inputBackground : 'transparent' },
+      ]}
+      onPress={onPress}>
+      {iconUrl ? (
+        <Image source={{ uri: iconUrl }} style={styles.guildIcon} />
+      ) : (
+        <View style={[styles.guildIconPlaceholder, { backgroundColor: colors.tint }]}>
+          <ThemedText style={styles.guildInitials}>
+            {getInitials(guild.name)}
+          </ThemedText>
+        </View>
+      )}
+      <View style={styles.guildInfo}>
+        <ThemedText style={styles.guildName} numberOfLines={1}>
+          {guild.name}
+        </ThemedText>
+        <ThemedText style={[styles.guildMeta, { color: colors.placeholder }]} numberOfLines={1}>
+          {guild.member_count} {guild.member_count === 1 ? 'member' : 'members'}
+        </ThemedText>
+      </View>
+    </Pressable>
+  );
+}
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const router = useRouter();
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
+  const guilds = useGuildsStore((s) => s.guilds);
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
+  if (guilds.length === 0) {
+    return (
+      <View style={[styles.center, { backgroundColor: colors.background }]}>
+        <ThemedText style={{ color: colors.placeholder }}>
+          No guilds yet
         </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      </View>
+    );
+  }
+
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <FlatList
+        data={guilds}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <GuildItem
+            guild={item}
+            colors={colors}
+            onPress={() => router.push(`/guild/${item.id}` as any)}
+          />
+        )}
+        ItemSeparatorComponent={() => (
+          <View
+            style={[
+              styles.separator,
+              { backgroundColor: colors.inputBorder },
+            ]}
+          />
+        )}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: {
+    flex: 1,
+  },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  guildItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  guildIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  guildIconPlaceholder: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  guildInitials: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  guildInfo: {
+    flex: 1,
+    marginLeft: 14,
+    justifyContent: 'center',
+  },
+  guildName: {
+    fontSize: 17,
+    fontWeight: '600',
+  },
+  guildMeta: {
+    fontSize: 14,
+    marginTop: 2,
+  },
+  separator: {
+    height: StyleSheet.hairlineWidth,
+    marginLeft: 82,
   },
 });
