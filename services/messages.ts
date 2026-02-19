@@ -1,9 +1,9 @@
 import { useMessagesStore } from '@/stores/messages-store';
 import { apiRequest } from './api';
-import type { Message } from '@/stores/messages-store';
+import type { Message, PendingMessage } from '@/stores/messages-store';
 
 export const MessagesService = {
-  async loadMessages(token: string, channelId: string, options?: { before?: string; limit?: number }) {
+  async loadMessages(channelId: string, options?: { before?: string; limit?: number }) {
     const { setMessages } = useMessagesStore.getState();
     const params = new URLSearchParams();
     if (options?.before) params.set('before', options.before);
@@ -11,7 +11,7 @@ export const MessagesService = {
 
     const query = params.toString();
     const path = `/channels/${channelId}/messages${query ? `?${query}` : ''}`;
-    const res = await apiRequest<Message[]>(path, { token });
+    const res = await apiRequest<Message[]>(path);
 
     if (res.ok) {
       setMessages(channelId, res.data);
@@ -19,10 +19,10 @@ export const MessagesService = {
     return res;
   },
 
-  async loadOlderMessages(token: string, channelId: string, beforeId: string, limit = 50) {
+  async loadOlderMessages(channelId: string, beforeId: string, limit = 50) {
     const { prependMessages } = useMessagesStore.getState();
     const path = `/channels/${channelId}/messages?before=${beforeId}&limit=${limit}`;
-    const res = await apiRequest<Message[]>(path, { token });
+    const res = await apiRequest<Message[]>(path);
 
     if (res.ok) {
       prependMessages(channelId, res.data);
@@ -30,25 +30,30 @@ export const MessagesService = {
     return res;
   },
 
-  async sendMessage(token: string, channelId: string, content: string) {
-    const { addMessage } = useMessagesStore.getState();
-    const res = await apiRequest<Message>(`/channels/${channelId}/messages`, {
-      method: 'POST',
-      body: { content },
-      token,
+  async sendMessage(channelId: string, content: string, author: Message['author']) {
+    const { addPendingMessage } = useMessagesStore.getState();
+    const nonce = String(Date.now());
+
+    addPendingMessage(channelId, {
+      nonce,
+      content,
+      channel_id: channelId,
+      created_at: new Date().toISOString(),
+      author,
     });
 
-    if (res.ok) {
-      addMessage(channelId, res.data);
-    }
+    const res = await apiRequest<Message>(`/channels/${channelId}/messages`, {
+      method: 'POST',
+      body: { content, nonce },
+    });
+
     return res;
   },
 
-  async deleteMessage(token: string, channelId: string, messageId: string) {
+  async deleteMessage(channelId: string, messageId: string) {
     const { removeMessage } = useMessagesStore.getState();
     const res = await apiRequest<void>(`/channels/${channelId}/messages/${messageId}`, {
       method: 'DELETE',
-      token,
     });
 
     if (res.ok) {
@@ -57,12 +62,11 @@ export const MessagesService = {
     return res;
   },
 
-  async editMessage(token: string, channelId: string, messageId: string, content: string) {
+  async editMessage(channelId: string, messageId: string, content: string) {
     const { editMessage } = useMessagesStore.getState();
     const res = await apiRequest<Message>(`/channels/${channelId}/messages/${messageId}`, {
       method: 'PUT',
       body: { content },
-      token,
     });
 
     if (res.ok) {
@@ -72,7 +76,10 @@ export const MessagesService = {
   },
 
   handleMessageCreated(event: { message: Message }) {
-    const { addMessage } = useMessagesStore.getState();
+    const { addMessage, removePendingMessage } = useMessagesStore.getState();
+    if (event.message.nonce) {
+      removePendingMessage(event.message.channel_id, event.message.nonce);
+    }
     addMessage(event.message.channel_id, event.message);
   },
 

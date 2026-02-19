@@ -3,20 +3,32 @@ import React, { useEffect } from 'react';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuth } from '@/contexts/auth-context';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { EchoService } from '@/services/echo';
 import { GuildsService } from '@/services/guilds';
+import { Colors } from '@/theme';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
-  const { token, isLoading } = useAuth();
+  const { token, user, isLoading } = useAuth();
 
   useEffect(() => {
-    if (token) {
-      GuildsService.loadGuilds(token);
+    console.log("Hello", token, user);
+    
+    if (token && user) {
+      GuildsService.loadGuilds().then((res) => {
+        if (res?.ok) {
+          EchoService.connect(token, user.id);
+          EchoService.subscribeToGuilds(res.data);
+        }
+      });
     }
-  }, [token]);
+
+    return () => {
+      EchoService.disconnect();
+    };
+  }, [token, user]);
 
   if (isLoading) return null;
 

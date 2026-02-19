@@ -138,7 +138,7 @@ export default function GuildChannelsScreen() {
             colors={colors}
             onPress={() => {
               if (item.type === CHANNEL_TYPE_TEXT) {
-                router.push({ pathname: '/channel/[id]' as any, params: { id: item.channel_id, name: item.name } });
+                router.push({ pathname: '/channel/[id]' as any, params: { id: item.channel_id, name: item.name, guildId: id } });
               }
             }}
           />

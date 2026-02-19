@@ -28,8 +28,15 @@ type GuildsStore = {
 
   addGuild: (guild: Guild) => void;
   editGuild: (guildId: string, updates: Partial<Guild>) => void;
-  editGuildChannel: (guildId: string, channelId: string, updates: Partial<any>) => void;
   removeGuild: (guildId: string) => void;
+
+  addGuildMember: (guildId: string, member: GuildMember) => void;
+  editGuildMember: (guildId: string, userId: string, updates: Partial<GuildMember>) => void;
+  removeGuildMember: (guildId: string, userId: string) => void;
+
+  addGuildChannel: (guildId: string, channel: any) => void;
+  editGuildChannel: (guildId: string, channelId: string, updates: Partial<any>) => void;
+  removeGuildChannel: (guildId: string, channelId: string) => void;
 };
 
 export const useGuildsStore = create<GuildsStore>((set) => ({
@@ -50,6 +57,39 @@ export const useGuildsStore = create<GuildsStore>((set) => ({
     set((state) => ({
       guilds: state.guilds.map((g) => (g.id === guildId ? { ...g, ...updates } : g)),
     })),
+  removeGuild: (guildId) =>
+    set((state) => ({ guilds: state.guilds.filter((g) => g.id !== guildId) })),
+
+  addGuildMember: (guildId, member) =>
+    set((state) => ({
+      guildMembers: {
+        ...state.guildMembers,
+        [guildId]: [...(state.guildMembers[guildId] ?? []), member],
+      },
+    })),
+  editGuildMember: (guildId, userId, updates) =>
+    set((state) => ({
+      guildMembers: {
+        ...state.guildMembers,
+        [guildId]: (state.guildMembers[guildId] ?? []).map((m) =>
+          m.user_id === userId ? { ...m, ...updates } : m
+        ),
+      },
+    })),
+  removeGuildMember: (guildId, userId) =>
+    set((state) => ({
+      guildMembers: {
+        ...state.guildMembers,
+        [guildId]: (state.guildMembers[guildId] ?? []).filter((m) => m.user_id !== userId),
+      },
+    })),
+
+  addGuildChannel: (guildId, channel) =>
+    set((state) => ({
+      guilds: state.guilds.map((g) =>
+        g.id === guildId ? { ...g, channels: [...g.channels, channel] } : g
+      ),
+    })),
   editGuildChannel: (guildId, channelId, updates) =>
     set((state) => ({
       guilds: state.guilds.map((g) => {
@@ -64,6 +104,12 @@ export const useGuildsStore = create<GuildsStore>((set) => ({
         return g;
       }),
     })),
-  removeGuild: (guildId) =>
-    set((state) => ({ guilds: state.guilds.filter((g) => g.id !== guildId) })),
+  removeGuildChannel: (guildId, channelId) =>
+    set((state) => ({
+      guilds: state.guilds.map((g) =>
+        g.id === guildId
+          ? { ...g, channels: g.channels.filter((c: any) => c.channel_id !== channelId) }
+          : g
+      ),
+    })),
 }));

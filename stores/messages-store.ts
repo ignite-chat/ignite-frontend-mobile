@@ -34,8 +34,17 @@ export type Message = {
   stickers: any[];
 };
 
+export type PendingMessage = {
+  nonce: string;
+  content: string;
+  channel_id: string;
+  created_at: string;
+  author: MessageAuthor;
+};
+
 type MessagesStore = {
   messages: { [channelId: string]: Message[] };
+  pendingMessages: { [channelId: string]: PendingMessage[] };
 
   setMessages: (channelId: string, messages: Message[]) => void;
   prependMessages: (channelId: string, messages: Message[]) => void;
@@ -43,10 +52,14 @@ type MessagesStore = {
   editMessage: (channelId: string, messageId: string, updates: Partial<Message>) => void;
   removeMessage: (channelId: string, messageId: string) => void;
   clearChannel: (channelId: string) => void;
+
+  addPendingMessage: (channelId: string, message: PendingMessage) => void;
+  removePendingMessage: (channelId: string, nonce: string) => void;
 };
 
 export const useMessagesStore = create<MessagesStore>((set) => ({
   messages: {},
+  pendingMessages: {},
 
   setMessages: (channelId, messages) =>
     set((state) => ({
@@ -92,4 +105,20 @@ export const useMessagesStore = create<MessagesStore>((set) => ({
       const { [channelId]: _, ...rest } = state.messages;
       return { messages: rest };
     }),
+
+  addPendingMessage: (channelId, message) =>
+    set((state) => ({
+      pendingMessages: {
+        ...state.pendingMessages,
+        [channelId]: [...(state.pendingMessages[channelId] ?? []), message],
+      },
+    })),
+
+  removePendingMessage: (channelId, nonce) =>
+    set((state) => ({
+      pendingMessages: {
+        ...state.pendingMessages,
+        [channelId]: (state.pendingMessages[channelId] ?? []).filter((m) => m.nonce !== nonce),
+      },
+    })),
 }));

@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useState, useCallback, type PropsWithChildren } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
-import type { User } from '@/services/auth';
+import { setApiToken } from '@/services/api';
+import { getMe, type User } from '@/services/auth';
 
 const TOKEN_KEY = 'ignite_auth_token';
 
@@ -54,21 +55,31 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    getStoredToken().then((stored) => {
+    getStoredToken().then(async (stored) => {
       if (stored) {
-        setToken(stored);
+        setApiToken(stored);
+        const res = await getMe();
+        if (res.ok) {
+          setToken(stored);
+          setUser(res.data);
+        } else {
+          setApiToken(null);
+          await removeToken();
+        }
       }
       setIsLoading(false);
     });
   }, []);
 
   const signIn = useCallback((newToken: string, newUser: User) => {
+    setApiToken(newToken);
     setToken(newToken);
     setUser(newUser);
     storeToken(newToken);
   }, []);
 
   const signOut = useCallback(() => {
+    setApiToken(null);
     setToken(null);
     setUser(null);
     removeToken();

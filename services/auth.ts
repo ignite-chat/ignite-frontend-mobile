@@ -35,6 +35,6 @@ export function register(username: string, hcaptchaToken: string, email?: string
   });
 }
 
-export function getMe(token: string) {
-  return apiRequest<User>('/@me', { token });
+export function getMe() {
+  return apiRequest<User>('/@me');
 }
