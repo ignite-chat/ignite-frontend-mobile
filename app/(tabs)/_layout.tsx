@@ -7,6 +7,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useAuth } from '@/contexts/auth-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { EchoService } from '@/services/echo';
+import { EmojisService } from '@/services/emojis';
 import { GuildsService } from '@/services/guilds';
 import { Colors, TextStyles } from '@/theme';
 
@@ -23,6 +24,7 @@ export default function TabLayout() {
         if (res?.ok) {
           EchoService.connect(token, user.id);
           EchoService.subscribeToGuilds(res.data);
+          EmojisService.loadAllGuildEmojis();
         }
       });
     }

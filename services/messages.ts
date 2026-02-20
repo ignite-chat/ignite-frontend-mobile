@@ -1,6 +1,7 @@
+import type { Message } from '@/stores/messages-store';
 import { useMessagesStore } from '@/stores/messages-store';
+import { useUsersStore } from '@/stores/users-store';
 import { apiRequest } from './api';
-import type { Message, PendingMessage } from '@/stores/messages-store';
 
 export const MessagesService = {
   async loadMessages(channelId: string, options?: { before?: string; limit?: number }) {
@@ -15,17 +16,31 @@ export const MessagesService = {
 
     if (res.ok) {
       setMessages(channelId, res.data);
+      useUsersStore.getState().addUsers(res.data.map((m) => m.author));
     }
     return res;
   },
 
   async loadOlderMessages(channelId: string, beforeId: string, limit = 50) {
-    const { prependMessages } = useMessagesStore.getState();
+    const { prependMessages, messages } = useMessagesStore.getState();
     const path = `/channels/${channelId}/messages?before=${beforeId}&limit=${limit}`;
     const res = await apiRequest<Message[]>(path);
 
     if (res.ok) {
-      prependMessages(channelId, res.data);
+      // Get existing message IDs for this channel
+      const existingIds = new Set(
+        (messages[channelId] ?? []).map((m) => m.id)
+      );
+
+      // Filter out duplicates
+      const uniqueMessages = res.data.filter(
+        (m) => !existingIds.has(m.id)
+      );
+
+      if (uniqueMessages.length > 0) {
+        prependMessages(channelId, uniqueMessages);
+        useUsersStore.getState().addUsers(uniqueMessages.map((m) => m.author));
+      }
     }
     return res;
   },
@@ -81,6 +96,7 @@ export const MessagesService = {
       removePendingMessage(event.message.channel_id, event.message.nonce);
     }
     addMessage(event.message.channel_id, event.message);
+    useUsersStore.getState().addUser(event.message.author);
   },
 
   handleMessageUpdated(event: { message: Message }) {

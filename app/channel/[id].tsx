@@ -9,8 +9,11 @@ import {
   View,
 } from 'react-native';
 
+import * as Clipboard from 'expo-clipboard';
+
 import { ChannelHeader } from '@/components/channel/channel-header';
 import { ChannelInfoModal } from '@/components/channel/channel-info-modal';
+import { MessageActionsModal } from '@/components/channel/message-actions-modal';
 import { MessageInput } from '@/components/channel/message-input';
 import { MessageItem, type DisplayMessage } from '@/components/channel/message-item';
 import { ThemedText } from '@/components/themed-text';
@@ -52,6 +55,8 @@ export default function ChannelScreen() {
   const loadingOlderRef = useRef(false);
   const hasMoreRef = useRef(true);
   const [modalVisible, setModalVisible] = useState(false);
+  const [actionsMessage, setActionsMessage] = useState<DisplayMessage | null>(null);
+  const [editingMessage, setEditingMessage] = useState<DisplayMessage | null>(null);
 
   useEffect(() => {
     if (!channelId) return;
@@ -66,7 +71,7 @@ export default function ChannelScreen() {
   const loadOlder = useCallback(async () => {
     if (!channelId || loadingOlderRef.current || !hasMoreRef.current || messages.length === 0) return;
     loadingOlderRef.current = true;
-    const oldestId = messages[0].id;
+    const oldestId = messages[messages.length - 1].id;
     const res = await MessagesService.loadOlderMessages(channelId, oldestId);
     if (res.ok && res.data.length < 50) hasMoreRef.current = false;
     loadingOlderRef.current = false;
@@ -75,6 +80,21 @@ export default function ChannelScreen() {
   const handleSend = useCallback(async () => {
     const content = text.trim();
     if (!content || !channelId || sending || !user) return;
+
+    if (editingMessage) {
+      if (content === editingMessage.content) {
+        setEditingMessage(null);
+        setText('');
+        return;
+      }
+      setSending(true);
+      await MessagesService.editMessage(channelId, editingMessage.id, content);
+      setEditingMessage(null);
+      setText('');
+      setSending(false);
+      return;
+    }
+
     setText('');
     setSending(true);
     await MessagesService.sendMessage(channelId, content, {
@@ -85,7 +105,17 @@ export default function ChannelScreen() {
       is_bot: false,
     });
     setSending(false);
-  }, [text, channelId, sending, user]);
+  }, [text, channelId, sending, user, editingMessage]);
+
+  const handleStartEdit = useCallback((msg: DisplayMessage) => {
+    setEditingMessage(msg);
+    setText(msg.content);
+  }, []);
+
+  const handleCancelEdit = useCallback(() => {
+    setEditingMessage(null);
+    setText('');
+  }, []);
 
   const displayName = channelName ?? 'Channel';
 
@@ -112,7 +142,15 @@ export default function ChannelScreen() {
             ref={listRef}
             data={messages}
             keyExtractor={(item) => item.id}
-            renderItem={({ item }) => <MessageItem message={item} colors={colors} />}
+            renderItem={({ item, index }) => (
+              <MessageItem
+                message={item}
+                prevMessage={messages[index + 1]}
+                colors={colors}
+                onLongPress={setActionsMessage}
+                highlighted={editingMessage?.id === item.id}
+              />
+            )}
             inverted
             contentContainerStyle={styles.listContent}
             onEndReached={loadOlder}
@@ -131,7 +169,10 @@ export default function ChannelScreen() {
           onChangeText={setText}
           onSend={handleSend}
           sending={sending}
+          guildId={guildId}
           colors={colors}
+          editing={editingMessage !== null}
+          onCancelEdit={handleCancelEdit}
         />
       </KeyboardAvoidingView>
 
@@ -141,6 +182,22 @@ export default function ChannelScreen() {
         guildId={guildId!}
         colors={colors}
         onClose={() => setModalVisible(false)}
+      />
+
+      <MessageActionsModal
+        visible={actionsMessage !== null}
+        message={actionsMessage}
+        currentUserId={user?.id ?? ''}
+        colors={colors}
+        onClose={() => setActionsMessage(null)}
+        onCopy={(msg) => Clipboard.setStringAsync(msg.content)}
+        onEdit={handleStartEdit}
+        onDelete={(msg) => {
+          if (channelId) MessagesService.deleteMessage(channelId, msg.id);
+        }}
+        onReply={(msg) => {
+          // TODO: implement reply flow
+        }}
       />
     </View>
   );

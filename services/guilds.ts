@@ -1,4 +1,5 @@
 import { useGuildsStore } from '@/stores/guild-store';
+import { useRolesStore } from '@/stores/roles-store';
 import { apiRequest } from './api';
 import type { Guild } from '@/stores/guild-store';
 
@@ -8,6 +9,12 @@ export const GuildsService = {
     const res = await apiRequest<Guild[]>('/guilds');
     if (res.ok) {
       setGuilds(res.data);
+      const { setGuildRoles } = useRolesStore.getState();
+      for (const guild of res.data) {
+        if (guild.roles?.length) {
+          setGuildRoles(guild.id, guild.roles);
+        }
+      }
     }
     return res;
   },
@@ -58,6 +65,9 @@ export const GuildsService = {
   handleGuildUpdated(event: { guild: Guild }) {
     const { editGuild } = useGuildsStore.getState();
     editGuild(event.guild.id, event.guild);
+    if (event.guild.roles?.length) {
+      useRolesStore.getState().setGuildRoles(event.guild.id, event.guild.roles);
+    }
   },
 
   handleGuildDeleted(event: { guild: { id: string } }) {
